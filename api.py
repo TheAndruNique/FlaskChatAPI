@@ -2,9 +2,12 @@ from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
 import hashlib
+import jwt
+import time
 
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = '4e1501b865e93e5edf508935ae757a172e95a4914df6e2cad3f6cf3c4ed496e5'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 BASE_PATH = '/api/v1.0'
 db = SQLAlchemy(app)
@@ -26,6 +29,36 @@ class Users(db.Model):
     
     def __repr__(self) -> str:
         return f'<user {self.id}>'
+
+@app.route(f'{BASE_PATH}/login', methods=['POST'])
+def auth():
+    data = request.get_json()
+    required_keys = ['login', 'password']
+    
+    missing_keys = [key for key in required_keys if key not in data]
+    
+    if missing_keys:
+        return jsonify({
+            'error': True, 
+            'reason': f'missed follow keys: {", ".join(missing_keys)}'
+        }), 400
+
+    user = Users.query.filter_by(login=data['login']).first()
+    
+    if user and user.password == get_password_hash(data['password']):
+        time_exp = time.time() + 300
+        token = jwt.encode({'user_id': user.id, 'exp': time_exp}, app.config['SECRET_KEY'], algorithm='HS256')
+        return jsonify({
+            'success': True,
+            'token': token,
+            'exp': time_exp
+        }), 200
+    else:
+        return jsonify({
+            'success': False,
+            'reason': 'Unauthorized'
+        }), 401
+        
 
 @app.route(f'{BASE_PATH}/register', methods=['POST'])
 def register():
