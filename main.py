@@ -1,6 +1,6 @@
 from app import app, db
 from auth import auth
-from chattings import chattings
+from chat import chattings
 
 
 app.register_blueprint(auth)
