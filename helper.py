@@ -28,6 +28,24 @@ def token_required(f):
         return f(current_user, *args, **kwargs)
     return wrapper
 
+def check_required_keys(required_keys):
+    def decorator(f):
+        wraps(f)
+        def wrapper(*args, **kwargs):
+            data = request.get_json()
+            
+            missing_keys = [key for key in required_keys if key not in data]
+
+            if missing_keys:
+                return jsonify({
+                    'error': True, 
+                    'reason': f'missed follow keys: {", ".join(missing_keys)}'
+                }), 400
+            
+            return f(*args, **kwargs)
+        return wrapper
+    return decorator
+
 def get_password_hash(password):
     hash = hashlib.sha256(password.encode())
     return hash.hexdigest()

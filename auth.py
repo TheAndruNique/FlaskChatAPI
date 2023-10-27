@@ -4,7 +4,7 @@ from config import BASE_PATH, MAX_LOGIN_LENGTH, MIN_LOGIN_LENGTH,  MIN_PASSWORD_
 from models import Users
 import time
 import jwt
-from helper import get_password_hash
+from helper import get_password_hash, check_required_keys
 from app import app, db
 
 
@@ -12,17 +12,9 @@ auth = Blueprint('auth', __name__)
 
 
 @auth.route(f'{BASE_PATH}/login', methods=['POST'])
+@check_required_keys(['login', 'password'])
 def authentication():
     data = request.get_json()
-    required_keys = ['login', 'password']
-    
-    missing_keys = [key for key in required_keys if key not in data]
-    
-    if missing_keys:
-        return jsonify({
-            'error': True, 
-            'reason': f'missed follow keys: {", ".join(missing_keys)}'
-        }), 400
 
     user = Users.query.filter_by(login=data['login']).first()
     
@@ -39,19 +31,11 @@ def authentication():
             'success': False,
             'reason': 'Unauthorized'
         }), 401
-        
+
 @auth.route(f'{BASE_PATH}/register', methods=['POST'])
+@check_required_keys(['login', 'password'])
 def register():
     data = request.get_json()
-    required_keys = ['login', 'password']
-    
-    missing_keys = [key for key in required_keys if key not in data]
-    
-    if missing_keys:
-        return jsonify({
-            'error': True, 
-            'reason': f'missed follow keys: {", ".join(missing_keys)}'
-        }), 400
         
     if len(data['login']) < MIN_LOGIN_LENGTH or len(data['login']) > MAX_LOGIN_LENGTH:
         return jsonify({

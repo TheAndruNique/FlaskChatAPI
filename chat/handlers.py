@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from helper import token_required
+from helper import token_required, check_required_keys
 from config import BASE_PATH
 from models import Users, Chats
 from app import db
@@ -36,17 +36,10 @@ def get_chats(current_user: Users):
 
 @chattings.route(f'{BASE_PATH}/send_message', methods=['POST'])
 @token_required
+@check_required_keys(['chat_id', 'message'])
 def send_message(current_user: Users):
     data = request.get_json()
-    required_keys = ['chat_id', 'message']
-
-    missing_keys = [key for key in required_keys if key not in data]
-
-    if missing_keys:
-        return jsonify({
-            'error': True, 
-            'reason': f'missed follow keys: {", ".join(missing_keys)}'
-        }), 400
+    
     try:
         chat = Chat(data['chat_id'], user = current_user)
         message_id = chat.send_message(data['message'])
@@ -68,18 +61,10 @@ def send_message(current_user: Users):
 
 @chattings.route(f'{BASE_PATH}/create_chat', methods=['POST'])
 @token_required
+@check_required_keys(['user_id'])
 def create_chat(current_user: Users):
     data = request.get_json()
-    required_keys = ['user_id']
     
-    missing_keys = [key for key in required_keys if key not in data]
-    
-    if missing_keys:
-        return jsonify({
-            'error': True, 
-            'reason': f'missed follow keys: {", ".join(missing_keys)}'
-        }), 400
-
     chat_id = str(uuid.uuid4())
     chat1 = Chats(user_id = current_user.id, chat_id=chat_id)
     chat2 = Chats(user_id = data['user_id'], chat_id=chat_id)
@@ -103,17 +88,9 @@ def create_chat(current_user: Users):
 
 @chattings.route(f'{BASE_PATH}/get_chat_updates', methods=['GET'])
 @token_required
+@check_required_keys(['chat_id', 'count', 'offset'])
 def get_chat_updates(current_user: Users):
     data = request.get_json()
-    required_keys = ['chat_id', 'count', 'offset']
-    
-    missing_keys = [key for key in required_keys if key not in data]
-    
-    if missing_keys:
-        return jsonify({
-            'error': True, 
-            'reason': f'missed follow keys: {", ".join(missing_keys)}'
-        }), 400
 
     try:
         chat = Chat(chat_id=data['chat_id'], user=current_user)
@@ -132,19 +109,10 @@ def get_chat_updates(current_user: Users):
 
 @chattings.route(f'{BASE_PATH}/search_users', methods=['GET'])
 @token_required
+@check_required_keys(['search_login'])
 def search_users(current_user):
     data = request.get_json()
-    required_keys = ['search_login']
-    
-    missing_keys = [key for key in required_keys if key not in data]
-    
-    if missing_keys:
-        return jsonify({
-            'error': True, 
-            'reason': f'missed follow keys: {", ".join(missing_keys)}'
-        }), 400
-        
-        
+  
     found_users  = Users.query.filter(or_(Users.login.like(f"%{data['search_login']}%"))).all()
     found_users_lst  = []
 
