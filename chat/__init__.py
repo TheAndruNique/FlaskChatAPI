@@ -1,2 +1,2 @@
-from .chat import Chat, PermissionDeniedError
+from .chat import Chat, PermissionDeniedError, NotExistedChat
 from .handlers import chattings

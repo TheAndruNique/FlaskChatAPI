@@ -1,26 +1,32 @@
 from models import Users, Chats
 import pymongo
+from pymongo.errors import CollectionInvalid
 import time
 from functools import wraps
 
 
-
 class PermissionDeniedError(Exception):
     def __init__(self, message="Permission denied. User does not have the required permissions."):
-        self.message = message
-        super().__init__(self.message)
+        super().__init__(message)
+        
+        
+class NotExistedChat(Exception):
+    def __init__(self, message='Chat does not exist'):
+        super().__init__(message)
 
 
 class Chat:
-    def __init__(self, chat_id, user: Users) -> None:
+    def __init__(self, chat_id, user: Users, new=False) -> None:
         self.client = pymongo.MongoClient('mongodb://localhost:27017')
         self.db = self.client['chats']
         self.collection = self.db[chat_id]
+        if new:
+            self.create_rights()
         self.user = user
         self.chat_id = chat_id
-        self.check_rights()
-    
-    def add_rights(self):
+
+
+    def create_rights(self):
         users = Chats.query.filter_by(chat_id=self.chat_id)
         user_ids = []
         for item in users:
@@ -47,8 +53,8 @@ class Chat:
                     return f(self, *args, **kwargs)
                 else:
                     raise PermissionDeniedError()
-            else:
-                self.add_rights()
+            elif result is None:
+                raise NotExistedChat(f'Chat with ID {self.chat_id} does not exist')
         return wrapper
 
     @check_rights
@@ -70,8 +76,13 @@ class Chat:
 
     @check_rights
     def get_count_chat_messages(self):
-        return self.collection.count_documents({'message': {'$exists': True}})
-    
+        last_message = next(self.collection.find({'message': {'$exists': True}}).sort([("message_id", -1)]).limit(1), None)
+        if last_message:
+            count_msg = last_message.get('message_id')
+        elif last_message is None:
+            count_msg = 0
+        return count_msg
+
     @check_rights
     def get_chat_messages(self, count=20, offset=0):
         cursor = self.collection.find({'message': {'$exists': True}}).sort([("message_id", -1)]).limit(count).skip(offset)

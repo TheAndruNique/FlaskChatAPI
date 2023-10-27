@@ -15,7 +15,7 @@ def token_required(f):
             return jsonify({
                 'success': False,
                 'reason': 'No token provided'
-            }), 403
+            }), 401
         try:    
             data = jwt.decode(token, app.config['SECRET_KEY'], algorithms='HS256')
             current_user = Users.query.get(data['user_id'])
@@ -23,7 +23,7 @@ def token_required(f):
             return jsonify({
                 'success': False,
                 'reason': 'Invalid token'
-            }), 403
+            }), 401
             
         return f(current_user, *args, **kwargs)
     return wrapper
