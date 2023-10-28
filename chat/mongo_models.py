@@ -1,23 +1,13 @@
 from models import Users, Chats
 import pymongo
-from pymongo.errors import CollectionInvalid
 import time
 from functools import wraps
-
-
-class PermissionDeniedError(Exception):
-    def __init__(self, message="Permission denied. User does not have the required permissions."):
-        super().__init__(message)
-        
-        
-class NotExistedChat(Exception):
-    def __init__(self, message='Chat does not exist'):
-        super().__init__(message)
-
+from .exc import NotExistedChat, PermissionDeniedError
+from config import MONGODB_CONNECTION_URI
 
 class Chat:
     def __init__(self, chat_id, user: Users, new=False) -> None:
-        self.client = pymongo.MongoClient('mongodb://localhost:27017')
+        self.client = pymongo.MongoClient(MONGODB_CONNECTION_URI)
         self.db = self.client['chats']
         self.collection = self.db[chat_id]
         if new:

@@ -30,7 +30,7 @@ def token_required(f):
 
 def check_required_keys(required_keys):
     def decorator(f):
-        wraps(f)
+        @wraps(f)
         def wrapper(*args, **kwargs):
             data = request.get_json()
             

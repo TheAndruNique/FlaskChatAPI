@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy.exc import IntegrityError
-from config import BASE_PATH, MAX_LOGIN_LENGTH, MIN_LOGIN_LENGTH,  MIN_PASSWORD_LENGTH
+from config import BASE_PATH, MAX_LOGIN_LENGTH, MIN_LOGIN_LENGTH,  MIN_PASSWORD_LENGTH, TOKEN_LIFETIME
 from models import Users
 import time
 import jwt
@@ -19,7 +19,7 @@ def authentication():
     user = Users.query.filter_by(login=data['login']).first()
     
     if user and user.password == get_password_hash(data['password']):
-        time_exp = time.time() + 3600
+        time_exp = time.time() + TOKEN_LIFETIME
         token = jwt.encode({'user_id': user.id, 'exp': time_exp}, app.config['SECRET_KEY'], algorithm='HS256')
         return jsonify({
             'success': True,

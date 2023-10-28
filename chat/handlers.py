@@ -5,7 +5,8 @@ from models import Users, Chats
 from app import db
 import uuid
 from sqlalchemy import or_
-from .chat import Chat, PermissionDeniedError, NotExistedChat
+from .mongo_models import Chat
+from .exc import PermissionDeniedError, NotExistedChat
 
 
 chattings = Blueprint('chat', __name__)
