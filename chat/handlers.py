@@ -101,11 +101,16 @@ def get_chat_updates(current_user: Users):
             'error': True,
             'message': f'Chat with ID {data["chat_id"]} does not exist'
         }), 404
-
+    if messages:
+        total = messages[0].get('message_id')
+    elif messages is None:
+        total = 0
+    
     return jsonify({
         'success': True,
         'chat_id': data['chat_id'],
-        'messages': messages
+        'messages': messages,
+        'message_count': total 
     })
 
 @chattings.route(f'{BASE_PATH}/search_users', methods=['GET'])

@@ -10,10 +10,10 @@ class Chat:
         self.client = pymongo.MongoClient(MONGODB_CONNECTION_URI)
         self.db = self.client['chats']
         self.collection = self.db[chat_id]
-        if new:
-            self.create_rights()
         self.user = user
         self.chat_id = chat_id
+        if new:
+            self.create_rights()
 
 
     def create_rights(self):
