@@ -1,0 +1,42 @@
+version: '3'
+
+volumes:
+  app-api-volume:
+
+services:
+  app-api:
+    image: chat-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chat-api-server
+
+    volumes:
+      - app-api-volume:/app/
+
+    environment:
+      - SECRET_KEY=your_secret_key
+      - MONGODB_URI=mongodb://mongodb-server:27017/
+
+    ports:
+      - '5000:5000'
+
+    restart: always
+
+    depends_on:
+      - app-mongodb
+
+    networks:
+      - chat-api-net
+
+  app-mongodb:
+    image: mongo
+    container_name: mongodb-server
+    restart: always
+    networks:
+      - chat-api-net
+
+networks:
+  chat-api-net:
+    driver: bridge
+    name: chat-api-net
