@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy.exc import IntegrityError
-from config import BASE_PATH, MAX_LOGIN_LENGTH, MIN_LOGIN_LENGTH,  MIN_PASSWORD_LENGTH, TOKEN_LIFETIME
+from app.config import BASE_PATH, MAX_LOGIN_LENGTH, MIN_LOGIN_LENGTH,  MIN_PASSWORD_LENGTH, TOKEN_LIFETIME
 from models import Users
 import time
 import jwt

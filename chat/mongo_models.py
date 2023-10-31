@@ -3,7 +3,8 @@ import pymongo
 import time
 from functools import wraps
 from .exc import NotExistedChat, PermissionDeniedError
-from config import MONGODB_CONNECTION_URI
+from app.config import MONGODB_CONNECTION_URI
+
 
 class Chat:
     def __init__(self, chat_id, user: Users, new=False) -> None:

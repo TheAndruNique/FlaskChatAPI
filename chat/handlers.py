@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, request
 from helper import token_required, check_required_keys
-from config import BASE_PATH
 from models import Users, Chats
 from app import db
+from app.config import BASE_PATH
 import uuid
 from sqlalchemy import or_
 from .mongo_models import Chat
