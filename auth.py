@@ -62,7 +62,7 @@ def register():
         db.session.rollback()
         return jsonify({
             'error': True,
-            'reason': 'User with this login already exists.'
+            'reason': 'User with this login already exists'
         }), 400
     except:
         db.session.rollback()
