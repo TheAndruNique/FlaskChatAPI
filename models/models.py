@@ -1,4 +1,6 @@
 from app import db
+from sqlalchemy.orm import composite
+import uuid
 
 
 class Users(db.Model):
@@ -11,6 +13,7 @@ class Users(db.Model):
 
 
 class Chats(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    chat_id = db.Column(db.String(40))
+    id = db.Column(db.String(36), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+    chat_type = db.Column(db.String(10), nullable=True)
+    chat_with = db.Column(db.Integer)

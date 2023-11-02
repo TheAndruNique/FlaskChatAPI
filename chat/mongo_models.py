@@ -18,7 +18,7 @@ class Chat:
 
 
     def create_rights(self):
-        users = Chats.query.filter_by(chat_id=self.chat_id)
+        users = Chats.query.filter_by(id=self.chat_id)
         user_ids = []
         for item in users:
             user_ids.append(item.user_id)
@@ -32,6 +32,10 @@ class Chat:
             }
         }
         self.collection.insert_one(rights)
+
+    def get_config(self):
+        result = self.collection.find_one({'chat_config': {'$exists': True}})
+        return result.get('chat_config')
 
     def check_rights(f):
         @wraps(f)

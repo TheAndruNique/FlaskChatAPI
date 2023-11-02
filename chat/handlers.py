@@ -18,16 +18,18 @@ def get_chats(current_user: Users):
     chats_lst = []
     for item in chats:
         try:
+            chat = Chat(chat_id=item.id, user=current_user)
             chats_lst.append({
-                'chat_id': item.chat_id,
-                'count_messages': Chat(chat_id=item.chat_id, user=current_user).get_count_chat_messages()
+                'chat_id': item.id,
+                'messages_count': chat.get_count_chat_messages(),
+                'chat_config': chat.get_config()
             })
         except NotExistedChat:
             chats_lst.append({
-                'chat_id': item.chat_id,
+                'chat_id': item.id,
                 'status': 'Chat has been closed or deleted'
             })
-            for chat in Chats.query.filter_by(chat_id=item.chat_id):
+            for chat in Chats.query.filter_by(id=item.id):
                 db.session.delete(chat)
             db.session.commit()
 
@@ -40,7 +42,7 @@ def get_chats(current_user: Users):
 @check_required_keys(['chat_id', 'message'])
 def send_message(current_user: Users):
     data = request.get_json()
-    
+
     try:
         chat = Chat(data['chat_id'], user = current_user)
         message_id = chat.send_message(data['message'])
@@ -62,16 +64,42 @@ def send_message(current_user: Users):
 
 @chattings.route(f'{BASE_PATH}/create_chat', methods=['POST'])
 @token_required
-@check_required_keys(['user_id'])
+@check_required_keys(['chat_type'])
 def create_chat(current_user: Users):
     data = request.get_json()
     
+    chat_type = data['chat_type']
+    available_chat_types = ['private', 'group']
+    if chat_type not in available_chat_types:
+        return jsonify({
+            'success': False,
+            'message': f'Invalid chat_type. Use one of the following: {", ".join(available_chat_types)}'
+        })
+
     chat_id = str(uuid.uuid4())
-    chat1 = Chats(user_id = current_user.id, chat_id=chat_id)
-    chat2 = Chats(user_id = data['user_id'], chat_id=chat_id)
+    if chat_type == 'private':
+        if data.get('user_id') is None:
+            return jsonify({
+                'success': False,
+                'message': 'To create a private chat, specify the user_id'
+            })
+
+        chat = Chats(id=chat_id, user_id = current_user.id, chat_with=data['user_id'], chat_type=chat_type)
+        a_chat = Chats(id = chat.id, user_id = data['user_id'], chat_with=current_user.id, chat_type=chat_type)
+        db.session.add(chat)
+        db.session.add(a_chat)
+
+    if chat_type == 'group':
+        chat = Chats(id=chat_id, user_id=current_user.id,chat_type=chat_type)
+        db.session.add(chat)
+        try:
+            for item in data.get('users_id'):
+                a_chat = Chats(id=chat.id, user_id=item, chat_type=chat_type)
+                db.session.add(a_chat)
+        except:
+            pass
+    
     try:
-        db.session.add(chat1)
-        db.session.add(chat2)
         db.session.commit()
     except:
         db.session.rollback()
@@ -80,11 +108,11 @@ def create_chat(current_user: Users):
             'message': 'Failed to create chat'
         }), 500
 
-    Chat(chat_id=chat_id, user=current_user, new=True)
+    Chat(chat_id=chat.id, user=current_user, new=True)
     return jsonify({
         'success': True,
         'message': 'Chat created successfully',
-        'chat_id': chat_id
+        'chat_id': chat.id
     }), 200
 
 @chattings.route(f'{BASE_PATH}/get_chat_updates', methods=['GET'])
@@ -110,7 +138,7 @@ def get_chat_updates(current_user: Users):
         'success': True,
         'chat_id': data['chat_id'],
         'messages': messages,
-        'message_count': total 
+        'messages_count': total 
     })
 
 @chattings.route(f'{BASE_PATH}/search_users', methods=['GET'])
