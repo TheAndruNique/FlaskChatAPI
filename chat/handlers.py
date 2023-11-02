@@ -68,6 +68,14 @@ def send_message(current_user: Users):
 def create_private_chat(current_user: Users):
     data = request.get_json()
 
+    existed_chat = Chats.query.filter_by(user_id=current_user.id, chat_with=data['user_id']).first()
+    if existed_chat:
+        return jsonify({
+            'success': False,
+            'message': f'Private chat with user {data["user_id"]} already exists',
+            'chat_id': existed_chat.id
+        }), 400
+        
     chat_id = str(uuid.uuid4())
     chat = Chats(id=chat_id, user_id = current_user.id, chat_with=data['user_id'], chat_type='private')
     a_chat = Chats(id = chat.id, user_id = data['user_id'], chat_with=current_user.id, chat_type='private')
