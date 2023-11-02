@@ -12,7 +12,7 @@ auth = Blueprint('auth', __name__)
 
 
 @auth.route(f'{BASE_PATH}/login', methods=['POST'])
-@check_required_keys(['login', 'password'])
+@check_required_keys({'login': str, 'password': str})
 def authentication():
     data = request.get_json()
 
@@ -33,7 +33,7 @@ def authentication():
         }), 401
 
 @auth.route(f'{BASE_PATH}/register', methods=['POST'])
-@check_required_keys(['login', 'password'])
+@check_required_keys({'login': str, 'password': str})
 def register():
     data = request.get_json()
         

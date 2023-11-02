@@ -28,13 +28,22 @@ def token_required(f):
         return f(current_user, *args, **kwargs)
     return wrapper
 
-def check_required_keys(required_keys):
+def check_required_keys(required_keys: dict):
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
             data = request.get_json()
             
-            missing_keys = [key for key in required_keys if key not in data]
+            missing_keys = []
+
+            for key, expected_type in required_keys.items():
+                if key not in data:
+                    missing_keys.append(key)
+                elif not isinstance(data['key'], expected_type):
+                    return jsonify({
+                        'error': True,
+                        'reason': f'Invalid data type for key "{key}"'
+                    })
 
             if missing_keys:
                 return jsonify({

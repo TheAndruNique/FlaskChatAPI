@@ -39,7 +39,7 @@ def get_chats(current_user: Users):
 
 @chattings.route(f'{BASE_PATH}/send_message', methods=['POST'])
 @token_required
-@check_required_keys(['chat_id', 'message'])
+@check_required_keys({'chat_id': str, 'message': str})
 def send_message(current_user: Users):
     data = request.get_json()
 
@@ -64,7 +64,7 @@ def send_message(current_user: Users):
 
 @chattings.route(f'{BASE_PATH}/create_private_chat', methods=['POST'])
 @token_required
-@check_required_keys(['user_id'])
+@check_required_keys({'user_id': int})
 def create_private_chat(current_user: Users):
     data = request.get_json()
 
@@ -100,7 +100,7 @@ def create_private_chat(current_user: Users):
 
 @chattings.route(f'{BASE_PATH}/create_group_chat', methods=['POST'])
 @token_required
-@check_required_keys([])
+@check_required_keys({})
 def create_group_chat(current_user: Users):
     data = request.get_json()
 
@@ -139,7 +139,7 @@ def create_group_chat(current_user: Users):
 
 @chattings.route(f'{BASE_PATH}/get_chat_updates', methods=['GET'])
 @token_required
-@check_required_keys(['chat_id', 'count', 'offset'])
+@check_required_keys({'chat_id': str, 'count': int, 'offset': int})
 def get_chat_updates(current_user: Users):
     data = request.get_json()
 
@@ -165,7 +165,7 @@ def get_chat_updates(current_user: Users):
 
 @chattings.route(f'{BASE_PATH}/search_users', methods=['GET'])
 @token_required
-@check_required_keys(['search_login'])
+@check_required_keys({'search_login': str})
 def search_users(current_user):
     data = request.get_json()
   
