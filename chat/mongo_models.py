@@ -7,17 +7,17 @@ from app.config import MONGODB_CONNECTION_URI
 
 
 class Chat:
-    def __init__(self, chat_id, user: Users, new=False) -> None:
+    def __init__(self, chat_id, user: Users, chat_type=None, new=False) -> None:
         self.client = pymongo.MongoClient(MONGODB_CONNECTION_URI)
         self.db = self.client['chats']
         self.collection = self.db[chat_id]
         self.user = user
         self.chat_id = chat_id
         if new:
-            self.create_rights()
+            self.create_rights(chat_type)
 
 
-    def create_rights(self):
+    def create_rights(self, chat_type):
         users = Chats.query.filter_by(id=self.chat_id)
         user_ids = []
         for item in users:
@@ -26,11 +26,15 @@ class Chat:
         rights = {
             'chat_config': {
                 'users': user_ids,
-                'data': {
-                    'title': self.chat_id
-                }
+                'title': self.chat_id,
+                'type': chat_type
             }
         }
+        if chat_type == 'private':
+            pass
+        elif chat_type == 'group':
+            rights['chat_config']['creator_id'] = self.user.id
+
         self.collection.insert_one(rights)
 
     def get_config(self):
