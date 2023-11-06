@@ -1,24 +1,24 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify
 from sqlalchemy.exc import IntegrityError
-from app.config import BASE_PATH, MAX_LOGIN_LENGTH, MIN_LOGIN_LENGTH, MIN_PASSWORD_LENGTH, TOKEN_LIFETIME
+from app.config import BASE_PATH, TOKEN_LIFETIME
 from db import Users
 import time
 import jwt
-from helper import get_password_hash, check_required_keys
+from helper import get_password_hash, validate_arguments
 from app import app, db
+from request_models import AuthenticationModel
 
 
 auth_handler = Blueprint('auth', __name__)
 
 
 @auth_handler.route(f'{BASE_PATH}/login', methods=['POST'])
-@check_required_keys({'login': str, 'password': str})
-def authentication():
-    data = request.get_json()
+@validate_arguments(AuthenticationModel)
+def authentication(user_data: AuthenticationModel):
 
-    user = Users.query.filter_by(login=data['login']).first()
+    user = Users.query.filter_by(login=user_data.login).first()
     
-    if user and user.password == get_password_hash(data['password']):
+    if user and user.password == get_password_hash(user_data.password):
         time_exp = time.time() + TOKEN_LIFETIME
         token = jwt.encode({'user_id': user.id, 'exp': time_exp}, app.config['SECRET_KEY'], algorithm='HS256')
         return jsonify({
@@ -33,25 +33,11 @@ def authentication():
         }), 401
 
 @auth_handler.route(f'{BASE_PATH}/register', methods=['POST'])
-@check_required_keys({'login': str, 'password': str})
-def register():
-    data = request.get_json()
-        
-    if len(data['login']) < MIN_LOGIN_LENGTH or len(data['login']) > MAX_LOGIN_LENGTH:
-        return jsonify({
-            'error': True, 
-            'reason': f'Login length must be between {MIN_LOGIN_LENGTH} and {MAX_LOGIN_LENGTH} characters'
-        }), 400
-
-    if len(data['password']) < MIN_PASSWORD_LENGTH:
-        return jsonify({
-            'error': True, 
-            'reason': f'Password length must be at least {MIN_PASSWORD_LENGTH}'
-        }), 400
-
+@validate_arguments(AuthenticationModel)
+def register(user_data: AuthenticationModel):
     try:
-        hashed_password = get_password_hash(data['password'])
-        user = Users(login=data['login'], password=hashed_password)
+        hashed_password = get_password_hash(user_data.password)
+        user = Users(login=user_data.login, password=hashed_password)
         db.session.add(user)
         db.session.commit()
         return jsonify({
