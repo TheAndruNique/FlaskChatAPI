@@ -1,7 +1,7 @@
 from functools import wraps
 from flask import request, jsonify
 import hashlib
-from models import Users
+from db import Users
 from app import app
 import jwt
 
@@ -39,10 +39,10 @@ def check_required_keys(required_keys: dict):
             for key, expected_type in required_keys.items():
                 if key not in data:
                     missing_keys.append(key)
-                elif not isinstance(data['key'], expected_type):
+                elif not isinstance(data[key], expected_type):
                     return jsonify({
                         'error': True,
-                        'reason': f'Invalid data type for key "{key}"'
+                        'reason': f'Invalid data type for key {key}'
                     })
 
             if missing_keys:

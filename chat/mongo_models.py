@@ -1,4 +1,4 @@
-from models import Users, Chats
+from db import Users, Chats
 import pymongo
 import time
 from functools import wraps

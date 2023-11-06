@@ -1,17 +1,17 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy.exc import IntegrityError
-from app.config import BASE_PATH, MAX_LOGIN_LENGTH, MIN_LOGIN_LENGTH,  MIN_PASSWORD_LENGTH, TOKEN_LIFETIME
-from models import Users
+from app.config import BASE_PATH, MAX_LOGIN_LENGTH, MIN_LOGIN_LENGTH, MIN_PASSWORD_LENGTH, TOKEN_LIFETIME
+from db import Users
 import time
 import jwt
 from helper import get_password_hash, check_required_keys
 from app import app, db
 
 
-auth = Blueprint('auth', __name__)
+auth_handler = Blueprint('auth', __name__)
 
 
-@auth.route(f'{BASE_PATH}/login', methods=['POST'])
+@auth_handler.route(f'{BASE_PATH}/login', methods=['POST'])
 @check_required_keys({'login': str, 'password': str})
 def authentication():
     data = request.get_json()
@@ -32,7 +32,7 @@ def authentication():
             'reason': 'Unauthorized'
         }), 401
 
-@auth.route(f'{BASE_PATH}/register', methods=['POST'])
+@auth_handler.route(f'{BASE_PATH}/register', methods=['POST'])
 @check_required_keys({'login': str, 'password': str})
 def register():
     data = request.get_json()

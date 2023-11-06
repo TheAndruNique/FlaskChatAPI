@@ -1,6 +1,4 @@
 from app import db
-from sqlalchemy.orm import composite
-import uuid
 
 
 class Users(db.Model):

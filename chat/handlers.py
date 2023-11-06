@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from helper import token_required, check_required_keys
-from models import Users, Chats
+from db import Users, Chats
 from app import db
 from app.config import BASE_PATH
 import uuid
@@ -9,9 +9,9 @@ from .mongo_models import Chat
 from .exc import PermissionDeniedError, NotExistedChat
 
 
-chattings = Blueprint('chat', __name__)
+chat_handler = Blueprint('chat', __name__)
 
-@chattings.route(f'{BASE_PATH}/chats', methods=['GET'])
+@chat_handler.route(f'{BASE_PATH}/chats', methods=['GET'])
 @token_required
 def get_chats(current_user: Users):
     chats = Chats.query.filter_by(user_id=current_user.id)
@@ -37,7 +37,7 @@ def get_chats(current_user: Users):
         'chats': chats_lst
     }), 200
 
-@chattings.route(f'{BASE_PATH}/send_message', methods=['POST'])
+@chat_handler.route(f'{BASE_PATH}/send_message', methods=['POST'])
 @token_required
 @check_required_keys({'chat_id': str, 'message': str})
 def send_message(current_user: Users):
@@ -62,7 +62,7 @@ def send_message(current_user: Users):
         'message_id': message_id
     }), 200
 
-@chattings.route(f'{BASE_PATH}/create_private_chat', methods=['POST'])
+@chat_handler.route(f'{BASE_PATH}/create_private_chat', methods=['POST'])
 @token_required
 @check_required_keys({'user_id': int})
 def create_private_chat(current_user: Users):
@@ -98,9 +98,8 @@ def create_private_chat(current_user: Users):
     }), 200
 
 
-@chattings.route(f'{BASE_PATH}/create_group_chat', methods=['POST'])
+@chat_handler.route(f'{BASE_PATH}/create_group_chat', methods=['POST'])
 @token_required
-@check_required_keys({})
 def create_group_chat(current_user: Users):
     data = request.get_json()
 
@@ -137,7 +136,7 @@ def create_group_chat(current_user: Users):
         'chat_id': chat.id
     }), 200
 
-@chattings.route(f'{BASE_PATH}/get_chat_updates', methods=['GET'])
+@chat_handler.route(f'{BASE_PATH}/get_chat_updates', methods=['GET'])
 @token_required
 @check_required_keys({'chat_id': str, 'count': int, 'offset': int})
 def get_chat_updates(current_user: Users):
@@ -163,7 +162,7 @@ def get_chat_updates(current_user: Users):
         'messages_count': total 
     })
 
-@chattings.route(f'{BASE_PATH}/search_users', methods=['GET'])
+@chat_handler.route(f'{BASE_PATH}/search_users', methods=['GET'])
 @token_required
 @check_required_keys({'search_login': str})
 def search_users(current_user):

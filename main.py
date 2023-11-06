@@ -1,11 +1,11 @@
 from app import app, db
 from app.config import PORT
-from auth import auth
-from chat import chattings
+from auth import auth_handler
+from chat import chat_handler
 
 
-app.register_blueprint(auth)
-app.register_blueprint(chattings)
+app.register_blueprint(auth_handler)
+app.register_blueprint(chat_handler)
 
 
 if __name__ == '__main__':

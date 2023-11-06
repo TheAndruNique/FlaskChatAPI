@@ -1,1 +1,1 @@
-from .handlers import chattings
+from .handlers import chat_handler
