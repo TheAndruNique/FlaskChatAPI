@@ -4,6 +4,7 @@ import hashlib
 from db import Users
 from app import app
 import jwt
+from pydantic import ValidationError
 
 
 def token_required(f):
@@ -43,7 +44,7 @@ def check_required_keys(required_keys: dict):
                     return jsonify({
                         'error': True,
                         'reason': f'Invalid data type for key {key}'
-                    })
+                    }), 400
 
             if missing_keys:
                 return jsonify({
@@ -52,6 +53,23 @@ def check_required_keys(required_keys: dict):
                 }), 400
             
             return f(*args, **kwargs)
+        return wrapper
+    return decorator
+
+def validate_arguments(model):
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            try:
+                data = model(**request.get_json())
+            except ValidationError as e:
+                return jsonify({
+                    'error': True,
+                    'reason': 'Validation error',
+                    'errors': e.errors()
+                }), 400
+            
+            return f(data, *args, **kwargs)
         return wrapper
     return decorator
 
