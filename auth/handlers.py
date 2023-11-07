@@ -6,7 +6,7 @@ import time
 import jwt
 from helper import get_password_hash, validate_arguments
 from app import app, db
-from request_models import AuthenticationModel
+from .models import AuthenticationModel
 
 
 auth_handler = Blueprint('auth', __name__)
