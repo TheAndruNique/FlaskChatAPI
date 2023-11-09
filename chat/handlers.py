@@ -7,7 +7,7 @@ import uuid
 from sqlalchemy import or_
 from .mongo_models import Chat
 from .exc import PermissionDeniedError, NotExistedChat
-from .models import CreateGroupChatModel
+from .models import CreateGroupChatModel, GetChatUpdatesModel
 
 
 chat_handler = Blueprint('chat', __name__)
@@ -135,26 +135,21 @@ def create_group_chat(model: CreateGroupChatModel, current_user: Users):
 
 @chat_handler.route(f'{BASE_PATH}/get_chat_updates', methods=['GET'])
 @token_required
-@check_required_keys({'chat_id': str, 'count': int, 'offset': int})
-def get_chat_updates(current_user: Users):
-    data = request.get_json()
-
+@validate_arguments(GetChatUpdatesModel)
+def get_chat_updates(model: GetChatUpdatesModel, current_user: Users):
     try:
-        chat = Chat(chat_id=data['chat_id'], user=current_user)
-        messages = chat.get_chat_messages(count=data['count'], offset=data['offset'])
+        chat = Chat(chat_id=model.chat_id, user=current_user)
+        messages = chat.get_chat_messages(count=model.count, offset=model.offset)
+        total = chat.get_count_chat_messages()
     except NotExistedChat:
         return jsonify({
             'error': True,
-            'message': f'Chat with ID {data["chat_id"]} does not exist'
+            'message': f'Chat with ID {model.chat_id} does not exist'
         }), 404
 
-    total = 0
-    if messages:
-        total = messages[0].get('message_id')
-    
     return jsonify({
         'success': True,
-        'chat_id': data['chat_id'],
+        'chat_id': model.chat_id,
         'messages': messages,
         'messages_count': total 
     })
