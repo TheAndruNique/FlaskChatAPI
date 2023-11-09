@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from helper import token_required, check_required_keys
+from helper import token_required, check_required_keys, validate_arguments
 from db import Users, Chats
 from app import db
 from app.config import BASE_PATH
@@ -7,6 +7,7 @@ import uuid
 from sqlalchemy import or_
 from .mongo_models import Chat
 from .exc import PermissionDeniedError, NotExistedChat
+from .models import CreateGroupChatModel
 
 
 chat_handler = Blueprint('chat', __name__)
@@ -100,26 +101,22 @@ def create_private_chat(current_user: Users):
 
 @chat_handler.route(f'{BASE_PATH}/create_group_chat', methods=['POST'])
 @token_required
-def create_group_chat(current_user: Users):
-    data = request.get_json()
+@validate_arguments(CreateGroupChatModel)
+def create_group_chat(model: CreateGroupChatModel, current_user: Users):
 
-    chat_id = str(uuid.uuid4())
-
-    chat = Chats(id=chat_id, user_id=current_user.id, chat_type='group')
+    chat = Chats(id=model.chat_id, user_id=current_user.id, chat_type='group')
     db.session.add(chat)
 
-    users_id = data.get('users_id')
-    if users_id:
-        if isinstance(users_id, list):
-            for item in users_id:
-                a_chat = Chats(id=chat.id, user_id=item, chat_type='group')
-                db.session.add(a_chat)
+    if model.users_id:
+        for item in model.users_id:
+            a_chat = Chats(id=chat.id, user_id=item, chat_type='group')
+            db.session.add(a_chat)
         else:
             return jsonify({
                 'success': False,
                 'message': 'Invalid users_id data in the request.'
             }), 400
-    
+
     try:
         db.session.commit()
     except:
