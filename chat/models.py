@@ -15,4 +15,7 @@ class GetChatUpdatesModel(BaseModel):
     chat_id: str
     count: Optional[int] = Field(default=20)
     offset: Optional[int] = Field(default=0)
-    
+
+class SendMessageModel(BaseModel):
+    chat_id: str
+    message: str

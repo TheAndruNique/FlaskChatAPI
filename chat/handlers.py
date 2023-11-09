@@ -7,7 +7,7 @@ import uuid
 from sqlalchemy import or_
 from .mongo_models import Chat
 from .exc import PermissionDeniedError, NotExistedChat
-from .models import CreateGroupChatModel, CreatePrivateChatModel, GetChatUpdatesModel
+from .models import CreateGroupChatModel, CreatePrivateChatModel, GetChatUpdatesModel, SendMessageModel
 
 
 chat_handler = Blueprint('chat', __name__)
@@ -40,13 +40,12 @@ def get_chats(current_user: Users):
 
 @chat_handler.route(f'{BASE_PATH}/send_message', methods=['POST'])
 @token_required
-@check_required_keys({'chat_id': str, 'message': str})
-def send_message(current_user: Users):
-    data = request.get_json()
+@validate_arguments(SendMessageModel)
+def send_message(model: SendMessageModel, current_user: Users):
 
     try:
-        chat = Chat(data['chat_id'], user = current_user)
-        message_id = chat.send_message(data['message'])
+        chat = Chat(model.chat_id, user = current_user)
+        message_id = chat.send_message(model.message)
     except PermissionDeniedError:
         return jsonify({
             'success': False,
@@ -55,7 +54,7 @@ def send_message(current_user: Users):
     except NotExistedChat:
         return jsonify({
             'error': True,
-            'message': f'Chat with ID {data["chat_id"]} does not exist'
+            'message': f'Chat with ID {model.chat_id} does not exist'
         }), 404
 
     return jsonify({
