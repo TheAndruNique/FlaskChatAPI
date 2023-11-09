@@ -7,7 +7,7 @@ import uuid
 from sqlalchemy import or_
 from .mongo_models import Chat
 from .exc import PermissionDeniedError, NotExistedChat
-from .models import CreateGroupChatModel, GetChatUpdatesModel
+from .models import CreateGroupChatModel, CreatePrivateChatModel, GetChatUpdatesModel
 
 
 chat_handler = Blueprint('chat', __name__)
@@ -65,21 +65,19 @@ def send_message(current_user: Users):
 
 @chat_handler.route(f'{BASE_PATH}/create_private_chat', methods=['POST'])
 @token_required
-@check_required_keys({'user_id': int})
-def create_private_chat(current_user: Users):
-    data = request.get_json()
+@validate_arguments(CreatePrivateChatModel)
+def create_private_chat(model: CreatePrivateChatModel, current_user: Users):
 
-    existed_chat = Chats.query.filter_by(user_id=current_user.id, chat_with=data['user_id']).first()
+    existed_chat = Chats.query.filter_by(user_id=current_user.id, chat_with=model.user_id).first()
     if existed_chat:
         return jsonify({
             'success': False,
-            'message': f'Private chat with user {data["user_id"]} already exists',
+            'message': f'Private chat with user {model.user_id} already exists',
             'chat_id': existed_chat.id
         }), 400
-        
-    chat_id = str(uuid.uuid4())
-    chat = Chats(id=chat_id, user_id = current_user.id, chat_with=data['user_id'], chat_type='private')
-    a_chat = Chats(id = chat.id, user_id = data['user_id'], chat_with=current_user.id, chat_type='private')
+
+    chat = Chats(id=model.chat_id, user_id = current_user.id, chat_with=model.user_id, chat_type='private')
+    a_chat = Chats(id = chat.id, user_id = model.user_id, chat_with=current_user.id, chat_type='private')
     db.session.add(chat)
     db.session.add(a_chat)
     try:
