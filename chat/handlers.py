@@ -3,11 +3,10 @@ from helper import token_required, check_required_keys, validate_arguments
 from db import Users, Chats
 from app import db
 from app.config import BASE_PATH
-import uuid
 from sqlalchemy import or_
-from .mongo_models import Chat
+from .mongo_models import Chat, ChatType
 from .exc import PermissionDeniedError, NotExistedChat
-from .models import CreateGroupChatModel, CreatePrivateChatModel, GetChatUpdatesModel, SendMessageModel
+from .models import ChangeChatTitleModel, CreateGroupChatModel, CreatePrivateChatModel, GetChatUpdatesModel, SendMessageModel
 
 
 chat_handler = Blueprint('chat', __name__)
@@ -75,8 +74,8 @@ def create_private_chat(model: CreatePrivateChatModel, current_user: Users):
             'chat_id': existed_chat.id
         }), 400
 
-    chat = Chats(id=model.chat_id, user_id = current_user.id, chat_with=model.user_id, chat_type='private')
-    a_chat = Chats(id = chat.id, user_id = model.user_id, chat_with=current_user.id, chat_type='private')
+    chat = Chats(id=model.chat_id, user_id = current_user.id, chat_with=model.user_id, chat_type=ChatType.PRIVATE)
+    a_chat = Chats(id = chat.id, user_id = model.user_id, chat_with=current_user.id, chat_type=ChatType.PRIVATE)
     db.session.add(chat)
     db.session.add(a_chat)
     try:
@@ -88,7 +87,7 @@ def create_private_chat(model: CreatePrivateChatModel, current_user: Users):
             'message': 'Failed to create chat'
         }), 500
 
-    Chat(chat_id=chat.id, user=current_user, chat_type='private', new=True)
+    Chat(chat_id=chat.id, user=current_user, chat_type=ChatType.PRIVATE, new=True)
     return jsonify({
         'success': True,
         'message': 'Private chat created successfully',
@@ -101,12 +100,12 @@ def create_private_chat(model: CreatePrivateChatModel, current_user: Users):
 @validate_arguments(CreateGroupChatModel)
 def create_group_chat(model: CreateGroupChatModel, current_user: Users):
 
-    chat = Chats(id=model.chat_id, user_id=current_user.id, chat_type='group')
+    chat = Chats(id=model.chat_id, user_id=current_user.id, chat_type=ChatType.GROUP)
     db.session.add(chat)
 
     if model.users_id:
         for item in model.users_id:
-            a_chat = Chats(id=chat.id, user_id=item, chat_type='group')
+            a_chat = Chats(id=chat.id, user_id=item, chat_type=ChatType.GROUP)
             db.session.add(a_chat)
         else:
             return jsonify({
@@ -123,7 +122,7 @@ def create_group_chat(model: CreateGroupChatModel, current_user: Users):
             'message': 'Failed to create chat'
         }), 500
 
-    Chat(chat_id=chat.id, user=current_user, chat_type='group', new=True)
+    Chat(chat_id=chat.id, user=current_user, chat_type=ChatType.GROUP, new=True)
     return jsonify({
         'success': True,
         'message': 'Group chat created successfully',
@@ -138,17 +137,24 @@ def get_chat_updates(model: GetChatUpdatesModel, current_user: Users):
         chat = Chat(chat_id=model.chat_id, user=current_user)
         messages = chat.get_chat_messages(count=model.count, offset=model.offset)
         total = chat.get_count_chat_messages()
+        chat_config = chat.get_config()
     except NotExistedChat:
         return jsonify({
             'error': True,
             'message': f'Chat with ID {model.chat_id} does not exist'
         }), 404
+    except PermissionDeniedError:
+        return jsonify({
+            'success': False,
+            'message': 'Permission denied'
+        }), 403
 
     return jsonify({
         'success': True,
         'chat_id': model.chat_id,
         'messages': messages,
-        'messages_count': total 
+        'messages_count': total,
+        'chat_config': chat_config
     })
 
 @chat_handler.route(f'{BASE_PATH}/search_users', methods=['GET'])
@@ -166,4 +172,28 @@ def search_users(current_user):
     return jsonify({
         'success': True,
         'found_users': found_users_lst
+    })
+    
+@chat_handler.route(f'{BASE_PATH}/change_chat_title', methods=['POST'])
+@token_required
+@validate_arguments(ChangeChatTitleModel)
+def change_chat_title(model: ChangeChatTitleModel, current_user: Users):
+    try:
+        chat = Chat(model.chat_id, current_user)
+        result = chat.change_chat_title(model.new_title)
+    except NotExistedChat:
+        return jsonify({
+            'error': True,
+            'message': f'Chat with ID {model.chat_id} does not exist'
+        }), 404
+    except PermissionDeniedError:
+        return jsonify({
+            'success': False,
+            'message': 'Permission denied'
+        }), 403
+        
+    return jsonify({
+        'success': True,
+        'chat_id': chat.chat_id,
+        'new_title': model.new_title
     })

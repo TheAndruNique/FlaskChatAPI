@@ -19,3 +19,8 @@ class GetChatUpdatesModel(BaseModel):
 class SendMessageModel(BaseModel):
     chat_id: str
     message: str
+    
+class ChangeChatTitleModel(BaseModel):
+    chat_id: str
+    new_title: str
+    

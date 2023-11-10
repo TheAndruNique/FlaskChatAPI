@@ -1,3 +1,4 @@
+from enum import Enum
 from db import Users, Chats
 import pymongo
 import time
@@ -5,6 +6,10 @@ from functools import wraps
 from .exc import NotExistedChat, PermissionDeniedError
 from app.config import MONGODB_CONNECTION_URI
 
+
+class ChatType(Enum):
+    PRIVATE = 'private'
+    GROUP = 'group'
 
 class Chat:
     def __init__(self, chat_id, user: Users, chat_type=None, new=False) -> None:
@@ -30,9 +35,9 @@ class Chat:
                 'type': chat_type
             }
         }
-        if chat_type == 'private':
+        if chat_type == ChatType.PRIVATE:
             pass
-        elif chat_type == 'group':
+        elif chat_type == ChatType.GROUP:
             rights['chat_config']['creator_id'] = self.user.id
 
         self.collection.insert_one(rights)
@@ -92,3 +97,8 @@ class Chat:
             messages.append(document)
             
         return messages
+    
+    @check_rights
+    def change_chat_title(self, new_title):
+        result = self.collection.update_one({'chat_config': {'$exists': True}}, {'$set': {'chat_config.title': new_title}})
+        return result.modified_count
