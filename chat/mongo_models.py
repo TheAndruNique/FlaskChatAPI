@@ -20,6 +20,8 @@ class Chat:
         self.chat_id = chat_id
         if new:
             self.create_rights(chat_type)
+        if not new:
+            self.__check_permission()
 
 
     def create_rights(self, chat_type):
@@ -62,6 +64,10 @@ class Chat:
         return wrapper
 
     @check_rights
+    def __check_permission(self):
+        pass
+
+    @check_rights
     def send_message(self, message):
         last_message = next(self.collection.find({'message': {'$exists': True}}).sort([("message_id", -1)]).limit(1), None)
         next_message_id = 1
@@ -102,3 +108,8 @@ class Chat:
     def change_chat_title(self, new_title):
         result = self.collection.update_one({'chat_config': {'$exists': True}}, {'$set': {'chat_config.title': new_title}})
         return result.modified_count
+
+    @check_rights
+    def add_user(self, user_id):
+        result = self.collection.update_one({'chat_config': {'$exists': True}}, {'$push': {'chat_config.users': user_id}})
+        return result.matched_count

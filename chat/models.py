@@ -23,4 +23,7 @@ class SendMessageModel(BaseModel):
 class ChangeChatTitleModel(BaseModel):
     chat_id: str
     new_title: str
-    
+
+class AddUserToChat(BaseModel):
+    chat_id: str
+    user_id: int

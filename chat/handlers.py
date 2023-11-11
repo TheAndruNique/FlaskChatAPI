@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+import sqlalchemy
 from helper import token_required, check_required_keys, validate_arguments
 from db import Users, Chats
 from app import db
@@ -6,7 +7,7 @@ from app.config import BASE_PATH
 from sqlalchemy import or_
 from .mongo_models import Chat, ChatType
 from .exc import PermissionDeniedError, NotExistedChat
-from .models import ChangeChatTitleModel, CreateGroupChatModel, CreatePrivateChatModel, GetChatUpdatesModel, SendMessageModel
+from .models import AddUserToChat, ChangeChatTitleModel, CreateGroupChatModel, CreatePrivateChatModel, GetChatUpdatesModel, SendMessageModel
 
 
 chat_handler = Blueprint('chat', __name__)
@@ -196,4 +197,45 @@ def change_chat_title(model: ChangeChatTitleModel, current_user: Users):
         'success': True,
         'chat_id': chat.chat_id,
         'new_title': model.new_title
+    })
+    
+@chat_handler.route(f'{BASE_PATH}/add_user', methods=['POST'])
+@token_required
+@validate_arguments(AddUserToChat)
+def add_user_to_chat(model: AddUserToChat, current_user):
+
+    try:
+        chat = Chat(chat_id=model.chat_id, user=current_user)
+        a_chat = Chats(id=model.chat_id, user_id=model.user_id, chat_type=ChatType.GROUP.value)
+        db.session.add(a_chat)
+        db.session.commit()
+        chat.add_user(model.user_id)
+    except PermissionDeniedError:
+        return jsonify({
+            'success': False,
+            'message': 'Permission denied'
+        }), 403
+    except NotExistedChat:
+        return jsonify({
+            'error': True,
+            'message': f'Chat with ID {model.chat_id} does not exist'
+        }), 404
+    except sqlalchemy.exc.IntegrityError:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': 'Invalid users_id data in the request or user already exists in the chat.'
+        }), 400
+    except:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': 'Failed to create chat'
+        }), 500
+
+    chat_config = chat.get_config()
+    return jsonify({
+        'success': True,
+        'chat_id': chat.chat_id,
+        'chat_config': chat_config
     })
